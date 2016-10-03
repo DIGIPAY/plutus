@@ -3,10 +3,13 @@ module Plutus
   module AmountsExtension
     # Returns a sum of the referenced Amount objects.
     #
-    # Takes a hash specifying :from_date and :to_date for calculating balances during periods.
-    # :from_date and :to_date may be strings of the form "yyyy-mm-dd" or Ruby Date objects
+    # Takes a hash specifying :from_date and :to_date for calculating balances 
+    # during periods.
+    # :from_date and :to_date may be strings of the form "yyyy-mm-dd hh:mm:ss"
+    # or Ruby DateTime objects
     #
-    # This runs the summation in the database, so it only works on persisted records.
+    # This runs the summation in the database, so it only works on persisted 
+    # records.
     #
     # @example
     #   credit_amounts.balance({:from_date => "2000-01-01", :to_date => Date.today})
@@ -15,12 +18,38 @@ module Plutus
     # @return [BigDecimal] The decimal value balance
     def balance(hash={})
       if hash[:from_date] && hash[:to_date]
-        from_date = hash[:from_date].kind_of?(Date) ? hash[:from_date] : Date.parse(hash[:from_date])
-        to_date = hash[:to_date].kind_of?(Date) ? hash[:to_date] : Date.parse(hash[:to_date])
-        includes(:entry).where('plutus_entries.date' => from_date..to_date).sum(:amount)
+        from_date = hash[:from_date].kind_of?(DateTime) ? hash[:from_date] : DateTime.parse(hash[:from_date])
+        to_date = hash[:to_date].kind_of?(DateTime) ? hash[:to_date] : DateTime.parse(hash[:to_date])
+        includes(:entry).where('plutus_entries.created_at' => from_date...to_date).sum(:amount)
       else
         sum(:amount)
       end
+    end
+
+    # Returns the account's running balance at the point of creation of the
+    # amount. This utilizes the internal balance log based on the date
+    # TODO: Delete all subsequent balances 
+    #
+    # @example
+    #   credit_amounts.running_balance
+    #   => #<BigDecimal:103259bb8,'0.2E4',4(12)>
+    #
+    # @return [BigDecimal] The decimal value balance
+    def running_balance
+      month_index = entry.created_at.strftime("%Y%m").to_i
+      balance_log = Plutus::BalanceLog.where(month_index: month_index,
+                                             account_id: account_id)
+      if balance_log.nil?
+        balance_log = Plutus::BalanceLog.create({ account_id: account_id, 
+                                                  month_index: month_index})
+      end
+
+      # Then get the total balance by adding the balance from_date to entry's
+      # created_at
+      return balance_log.balance + 
+        balance({ from_date: entry.created_at.strftime("%Y-%m-01 00:00:00"),
+                  to_date: entry.created_at.strftime("%Y-%m-%d %H:%M:%S")})
+
     end
 
     # Returns a sum of the referenced Amount objects.
@@ -32,8 +61,10 @@ module Plutus
     def balance_for_new_record
       balance = BigDecimal.new('0')
       each do |amount_record|
-        if amount_record.amount && !amount_record.marked_for_destruction?
-          balance += amount_record.amount # unless amount_record.marked_for_destruction?
+        if amount_record.amount
+          balance += amount_record.amount
+        else
+          balance = nil
         end
       end
       return balance

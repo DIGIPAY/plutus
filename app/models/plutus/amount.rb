@@ -17,6 +17,33 @@ module Plutus
       self.account = Account.find_by_name!(name)
     end
 
+    # Returns the account's running balance at the point of creation of the
+    # amount. This utilizes the internal balance log based on the date
+    # TODO: Delete all subsequent balances 
+    #
+    # @example
+    #   credit_amounts.running_balance
+    #   => #<BigDecimal:103259bb8,'0.2E4',4(12)>
+    #
+    # @return [BigDecimal] The decimal value balance
+    def running_balance
+      month_index = entry.created_at.strftime("%Y%m").to_i
+      balance_log = Plutus::BalanceLog.find_by(month_index: month_index,
+                                               plutus_account_id: account_id)
+      if balance_log.nil?
+        balance_log = Plutus::BalanceLog.create(
+          plutus_account_id: account_id,
+          month_index: month_index)
+      end
+      # Then get the total balance by adding the balance from_date to entry's
+      # created_at
+      return balance_log.balance + 
+        account.balance({ 
+          from_date: entry.created_at.strftime("%Y-%m-01 00:00:00"),
+          to_date: entry.created_at.strftime("%Y-%m-%d %H:%M:%S") })
+
+    end
+
     protected
 
     # Support constructing amounts with account = "name" syntax

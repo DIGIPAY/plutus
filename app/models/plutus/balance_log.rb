@@ -7,9 +7,8 @@ module Plutus
   #
   # @author Michael Bulat
   class BalanceLog < ActiveRecord::Base
-    belongs_to :account, class_name: 'Plutus::Account',
-                         foreign_key: :plutus_account_id
-    validates_presence_of :plutus_account_id, :month_index
+    belongs_to :account, class_name: 'Plutus::Account'
+    validates_presence_of :account_id, :month_index
 
     after_create :initialize_balance
 

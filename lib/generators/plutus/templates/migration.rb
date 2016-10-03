@@ -29,11 +29,19 @@ class CreatePlutusTables < ActiveRecord::Migration
     add_index :plutus_amounts, :type
     add_index :plutus_amounts, [:account_id, :entry_id]
     add_index :plutus_amounts, [:entry_id, :account_id]
+
+    create_table :plutus_balance_logs do |t|
+      t.references :account, index: true, foreign_key: true
+      t.decimal :balance, precision: 20, scale: 10
+      t.integer :month_index
+    end
+    add_index :plutus_balance_logs, :month_index
   end
 
   def self.down
     drop_table :plutus_accounts
     drop_table :plutus_entries
     drop_table :plutus_amounts
+    drop_table :plutus_balance_logs
   end
 end

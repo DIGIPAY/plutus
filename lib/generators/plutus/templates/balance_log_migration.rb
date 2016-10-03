@@ -1,7 +1,7 @@
 class CreatePlutusBalanceLogs < ActiveRecord::Migration
   def change
     create_table :plutus_balance_logs do |t|
-      t.references :account, index: true, foreign_key: true
+      t.references :account, index: true
       t.decimal :balance, precision: 20, scale: 10
       t.integer :month_index
     end

@@ -7,8 +7,9 @@ module Plutus
   #
   # @author Michael Bulat
   class BalanceLog < ActiveRecord::Base
-    belongs_to :account, :class_name => 'Plutus::Account'
-    validates_presence_of :balance, :account_id, :month_index
+    belongs_to :account, class_name: 'Plutus::Account',
+                         foreign_key: :plutus_account_id
+    validates_presence_of :plutus_account_id, :month_index
 
     after_create :initialize_balance
 
@@ -16,7 +17,7 @@ module Plutus
       month_balance = account.balance({from_date: "1970-01-01 00:00:00",
                        to_date: "%d-%02d-01 00:00:00" % [month_index / 100,
                                                          month_index % 100]})
-      update(balance, month_balance)
+      update(balance: month_balance)
     end
     
   end

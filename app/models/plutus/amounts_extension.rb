@@ -20,7 +20,7 @@ module Plutus
       if hash[:from_date] && hash[:to_date]
         from_date = hash[:from_date].kind_of?(DateTime) ? hash[:from_date] : DateTime.parse(hash[:from_date])
         to_date = hash[:to_date].kind_of?(DateTime) ? hash[:to_date] : DateTime.parse(hash[:to_date])
-        includes(:entry).where('plutus_entries.created_at' => from_date...to_date).sum(:amount)
+        includes(:entry).where('plutus_entries.created_at' => from_date..to_date).sum(:amount)
       else
         sum(:amount)
       end

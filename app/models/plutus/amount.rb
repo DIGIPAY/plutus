@@ -39,8 +39,8 @@ module Plutus
       # created_at
       return balance_log.balance + 
         account.balance({ 
-          from_date: entry.created_at.strftime("%Y-%m-01 00:00:00"),
-          to_date: entry.created_at.strftime("%Y-%m-%d %H:%M:%S") })
+          from_date: entry.created_at.utc.strftime("%Y-%m-01 00:00:00"),
+          to_date: entry.created_at.utc.strftime("%Y-%m-%d %H:%M:%S") })
 
     end
 

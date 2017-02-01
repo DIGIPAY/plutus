@@ -27,7 +27,7 @@ module Plutus
     #
     # @return [BigDecimal] The decimal value balance
     def running_balance
-      month_index = entry.created_at.strftime("%Y%m").to_i
+      month_index = entry.created_at.utc.strftime("%Y%m").to_i
       balance_log = Plutus::BalanceLog.find_by(month_index: month_index,
                                                account_id: account_id)
       if balance_log.nil?
